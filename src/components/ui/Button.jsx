@@ -44,7 +44,7 @@ const Button = forwardRef(({
         <div className="w-4 h-4 mr-2 spinner" />
       )}
       {icon && !loading && (
-        <span className={children ? 'mr-2' : ''}>{icon}</span>
+        <span className={children ? 'mr-2' : ''}>{icon} </span>
       )}
       {children}
     </button>

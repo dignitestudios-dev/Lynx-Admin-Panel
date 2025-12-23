@@ -1,119 +1,46 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-  Edit,
-  Trash2,
   Eye,
-  UserPlus,
   Shield,
   ShieldOff,
-  MessageSquare,
-  Calendar,
-  Filter,
   User,
   ShieldX,
   ShieldCheck,
   Ban,
 } from "lucide-react";
-import DataTable from "../components/common/DataTable";
-import Button from "../components/ui/Button";
-import Badge from "../components/ui/Badge";
-import Modal from "../components/ui/Modal";
-import Input from "../components/ui/Input";
-import Select from "../components/ui/Select";
-import FilterBar from "../components/ui/FilterBar";
-import Card from "../components/ui/Card";
-import { useForm } from "react-hook-form";
-import { formatDate, formatDateTime, formatNumber } from "../utils/helpers";
+
+import { formatDate, formatNumber } from "../utils/helpers";
 import useGetAllUsers from "../hooks/users/useGetAllUsers";
 import StatsCard from "../components/common/StatsCard";
+import Card from "../components/ui/Card";
+import DataTable from "../components/common/DataTable";
+import Modal from "../components/ui/Modal";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import useDebounce from "../hooks/global/useDebounce";
 
 const UserManagement = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+const [actionUser, setActionUser] = useState(null);
+const [actionStatus, setActionStatus] = useState("");
+const [currentPage, setCurrentPage] = useState(1);
+const [pageSize, setPageSize] = useState(10);
+  const [filters, setFilters] = useState({ name: "", role: "", status: "" });
+const [showDetailModal, setShowDetailModal] = useState(false);
+const [selectedUser, setSelectedUser] = useState(null);
+const [selectedUserId, setSelectedUserId] = useState(null);
 
-  const [showModal, setShowModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
+// Correct hook call: filters, search, limit, page
+const searchDebounce = useDebounce(filters.name );
+const { users, loading, totalData, totalPages, getUserDetails, blockUser } =
+useGetAllUsers(filters, searchDebounce, pageSize, currentPage);
 
-  const defaultFilters = {
-    role: "",
-    status: "",
-    dateRange: { start: "", end: "" },
-  };
-  const [filters, setFilters] = useState(defaultFilters);
-  const [apiFilters, setApiFilters] = useState(defaultFilters);
-
-  const filtersProp = useMemo(
-    () => [
-      {
-        key: "role",
-        label: "Role",
-        type: "select",
-        value: filters.role,
-        onChange: (value) => setFilters((prev) => ({ ...prev, role: value })),
-        options: [
-          { value: "user", label: "User" },
-          { value: "manager", label: "Manager" },
-          { value: "admin", label: "Admin" },
-        ],
-      },
-      {
-        key: "status",
-        label: "Status",
-        type: "select",
-        value: filters.status,
-        onChange: (value) => setFilters((prev) => ({ ...prev, status: value })),
-        options: [
-          { value: "active", label: "Active" },
-          { value: "inactive", label: "Inactive" },
-        ],
-      },
-      {
-        key: "startDate",
-        label: "Start Date",
-        type: "date",
-        value: filters.dateRange.start,
-        onChange: (value) =>
-          setFilters((prev) => ({
-            ...prev,
-            dateRange: { ...prev.dateRange, start: value },
-          })),
-      },
-      {
-        key: "endDate",
-        label: "End Date",
-        type: "date",
-        value: filters.dateRange.end,
-        onChange: (value) =>
-          setFilters((prev) => ({
-            ...prev,
-            dateRange: { ...prev.dateRange, end: value },
-          })),
-      },
-    ],
-    []
-  );
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm();
-
-  const { totalData, totalPages, users, loading, getAllUsers } = useGetAllUsers(
-    apiFilters,
-    currentPage,
-    pageSize
-  );
-
+  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-    setApiFilters(filters);
   }, [filters]);
 
+  // Stats Cards
   const usersStats = useMemo(
     () => [
       {
@@ -137,7 +64,6 @@ const UserManagement = () => {
         color: "text-orange-600",
         bgColor: "bg-orange-600/20",
       },
-
       {
         title: "Blocked Users",
         value: formatNumber(9),
@@ -149,24 +75,24 @@ const UserManagement = () => {
     []
   );
 
+
+
+  // Table Columns
   const columns = [
-    {
-      key: "id",
-      label: "ID",
-    },
     {
       key: "name",
       label: "Name",
-
-      render: (value, user) => (
+      render: (_, user) => (
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary-100/30 rounded-full flex items-center justify-center">
-            <span className="text-primary-600 font-medium text-sm">
-              {value.charAt(0).toUpperCase()}
-            </span>
-          </div>
+          <img
+            src={user.pfp}
+            alt={user.name}
+            className="w-8 h-8 rounded-full object-cover"
+          />
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">{value}</p>
+            <p className="font-medium text-gray-900 dark:text-white">
+              {user.name}
+            </p>
             <p className="text-sm text-gray-500">{user.email}</p>
           </div>
         </div>
@@ -175,68 +101,37 @@ const UserManagement = () => {
     {
       key: "role",
       label: "Role",
-      render: (value) => (
+      render: (_, user) => (
         <Badge
-          variant={
-            value === "admin"
-              ? "danger"
-              : value === "manager"
-              ? "warning"
+        variant={
+          user.role === "admin"
+          ? "danger"
+          : user.role === "manager"
+          ? "warning"
               : "default"
           }
-        >
-          {value}
+          >
+          {user.role || "N/A"}
         </Badge>
       ),
     },
     {
       key: "status",
       label: "Status",
-      render: (value, user) => (
-        <div className="flex items-center space-x-2">
-          <Badge
-            variant={
-              user.isBlocked
-                ? "danger"
-                : value === "active"
-                ? "success"
-                : "default"
-            }
-          >
-            {user.isBlocked ? "Blocked" : value}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      key: "totalTransactions",
-      label: "Transactions",
-
-      render: (value, user) => (
-        <div>
-          <p className="font-medium">{value}</p>
-          <p className="text-sm text-gray-500">${user.totalSpent.toFixed(2)}</p>
-        </div>
-      ),
-    },
-    {
-      key: "lastLogin",
-      label: "Last Login",
-
-      render: (value) => (
-        <div>
-          <p className="text-sm">{formatDate(value)}</p>
-          <p className="text-xs text-gray-500">
-            {new Date(value).toLocaleTimeString()}
-          </p>
-        </div>
+      render: (_, user) => (
+        <Badge
+          variant={
+            user.isActive ? "success" : "default"
+          }
+        >
+          {user.isActive ? "Active" : "Inactive"}
+        </Badge>
       ),
     },
     {
       key: "createdAt",
       label: "Joined",
-
-      render: (value) => formatDate(value),
+      render: (_, user) => formatDate(user.createdAt),
     },
     {
       key: "actions",
@@ -244,269 +139,122 @@ const UserManagement = () => {
       render: (_, user) => (
         <div className="flex items-center space-x-2">
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleView(user)}
-            icon={<Eye className="w-4 h-4" />}
-            title="View Details"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(user)}
-            icon={<Edit className="w-4 h-4" />}
-            title="Edit User"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleToggleBlock(user)}
-            icon={
-              user.isBlocked ? (
-                <Shield className="w-4 h-4" />
-              ) : (
-                <ShieldOff className="w-4 h-4" />
-              )
-            }
-            title={user.isBlocked ? "Unblock User" : "Block User"}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleChat(user)}
-            icon={<MessageSquare className="w-4 h-4" />}
-            title="Start Chat"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(user)}
-            icon={<Trash2 className="w-4 h-4" />}
-            title="Delete User"
-          />
+  variant="ghost"
+  size="sm"
+  onClick={async () => {
+    setSelectedUserId(user._id);  // trigger fetch
+    const details = await getUserDetails(user._id);
+    setSelectedUser(details);
+    setShowDetailModal(true);     // open modal after data fetch
+  }}
+  icon={<Eye className="w-4 h-4" />}
+  title="View Details"
+/>
+
+<Button
+  variant="ghost"
+  size="sm"
+  onClick={() => {
+    setActionUser(user);
+    // If user is active, next action is to block → pass false
+    // If user is inactive, next action is to unblock → pass true
+    setActionStatus(!user.isActive); 
+    setShowConfirmModal(true);
+  }}
+  icon={user.isActive ? <Shield className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
+  title={user.isActive ? "Block User" : "Unblock User"}
+/>
+
+
         </div>
       ),
     },
   ];
-
-  const handleAdd = () => {
-    setEditingUser(null);
-    reset();
-    setShowModal(true);
-  };
-
-  const handleEdit = (user) => {
-    setEditingUser(user);
-    reset(user);
-    setShowModal(true);
-  };
-
-  const handleView = (user) => {
-    setSelectedUser(user);
-    setShowDetailModal(true);
-  };
-
-  const handleToggleBlock = (user) => {
-    const action = user.isBlocked ? "unblock" : "block";
-    if (confirm(`Are you sure you want to ${action} ${user.name}?`)) {
-      setUsers(
-        users.map((u) =>
-          u.id === user.id ? { ...u, isBlocked: !u.isBlocked } : u
-        )
-      );
-    }
-  };
-
-  const handleChat = (user) => {
-    // Navigate to chat or open chat modal
-    alert(`Starting chat with ${user.name}`);
-  };
-
-  const handleDelete = (user) => {
-    if (
-      confirm(
-        `Are you sure you want to delete ${user.name}? This action cannot be undone.`
-      )
-    ) {
-      setUsers(users.filter((u) => u.id !== user.id));
-    }
-  };
-
-  const onSubmit = (data) => {
-    if (editingUser) {
-      setUsers(
-        users.map((u) => (u.id === editingUser.id ? { ...u, ...data } : u))
-      );
-    } else {
-      const newUser = {
-        ...data,
-        id: Math.max(...users.map((u) => u.id)) + 1,
-        createdAt: new Date().toISOString(),
-        lastLogin: null,
-        totalTransactions: 0,
-        totalSpent: 0,
-        isBlocked: false,
-      };
-      setUsers([...users, newUser]);
-    }
-    setShowModal(false);
-  };
+  
+  console.log(selectedUser,"actionStatus");
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {usersStats?.map((stat, index) => (
-          <StatsCard
-            key={index}
-            title={stat.title}
-            value={stat.value}
-            icon={stat.icon ? <stat.icon /> : null}
-            colored
-            color={stat.color}
-            bgColor={stat.bgColor}
-            index={index}
-          />
+      {/* Stats */}
+      {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {usersStats.map((stat, idx) => (
+          <StatsCard key={idx} {...stat} colored />
         ))}
-      </div>
-
+      </div> */}
       {/* Filters */}
-      <Card className="p-4">
-        <FilterBar
-          filters={filtersProp}
-          onClear={() => setFilters(defaultFilters)}
+      <Card className="p-4 flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
+        <input
+          type="text"
+          placeholder="Search by name"
+          value={filters.name}
+          onChange={(e) =>
+            setFilters((prev) => ({ ...prev, name: e.target.value }))
+          }
+          className="border rounded px-3 py-2 w-full md:w-64"
         />
-      </Card>
 
+        <Button
+          onClick={() => setFilters({ name: "", role: "", status: "" })}
+          variant="outline"
+        >
+          Clear Filters
+        </Button>
+      </Card>
       {/* Data Table */}
       <DataTable
         title="User Management"
         data={users}
         loading={loading}
-        onAdd={handleAdd}
         columns={columns}
         totalData={totalData}
         totalPages={totalPages}
         currentPage={currentPage}
         pageSize={pageSize}
-        searchTerm={searchTerm}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
-        onSearch={setSearchTerm}
-        exportable={true}
       />
-
-      {/* Add/Edit User Modal */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingUser ? "Edit User" : "Add New User"}
-        size="md"
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input
-            label="Full Name"
-            {...register("name", { required: "Name is required" })}
-            error={errors.name?.message}
-          />
-
-          <Input
-            label="Email"
-            type="email"
-            {...register("email", {
-              required: "Email is required",
-              pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                message: "Invalid email address",
-              },
-            })}
-            error={errors.email?.message}
-          />
-
-          <Input
-            label="Phone"
-            {...register("phone")}
-            error={errors.phone?.message}
-          />
-
-          <Input
-            label="Address"
-            {...register("address")}
-            error={errors.address?.message}
-          />
-
-          <Select
-            label="Role"
-            options={[
-              { value: "", label: "Select Role" },
-              { value: "user", label: "User" },
-              { value: "manager", label: "Manager" },
-              { value: "admin", label: "Admin" },
-            ]}
-            {...register("role", { required: "Role is required" })}
-            error={errors.role?.message}
-          />
-
-          <Select
-            label="Status"
-            options={[
-              { value: "", label: "Select Status" },
-              { value: "active", label: "Active" },
-              { value: "inactive", label: "Inactive" },
-            ]}
-            {...register("status", { required: "Status is required" })}
-            error={errors.status?.message}
-          />
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">
-              {editingUser ? "Update User" : "Create User"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* User Detail Modal */}
+      {/* Detail Modal */}
       <Modal
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
         title="User Details"
-        size="lg"
+        size="xl"
       >
         {selectedUser && (
           <div className="space-y-6">
-            {/* User Header */}
+            {/* Header */}
             <div className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
-                <span className="text-primary-600 font-bold text-xl">
-                  {selectedUser.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
+              <img
+                src={selectedUser.pfp}
+                alt={selectedUser.name}
+                className="w-20 h-20 rounded-full object-cover"
+              />
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {selectedUser.name}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
                   {selectedUser.email}
+                </p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                  {" "}
+                  {selectedUser.gender}, {formatDate(selectedUser.dob)}{" "}
                 </p>
                 <div className="flex items-center space-x-2 mt-2">
                   <Badge
                     variant={
                       selectedUser.isBlocked
                         ? "danger"
-                        : selectedUser.status === "active"
+                        : selectedUser.isActive
                         ? "success"
                         : "default"
                     }
                   >
-                    {selectedUser.isBlocked ? "Blocked" : selectedUser.status}
+                    {selectedUser.isBlocked
+                      ? "Blocked"
+                      : selectedUser.isActive
+                      ? "Active"
+                      : "Inactive"}
                   </Badge>
                   <Badge
                     variant={
@@ -519,117 +267,162 @@ const UserManagement = () => {
                   >
                     {selectedUser.role}
                   </Badge>
+                  {selectedUser.isSocialLogin && (
+                    <Badge variant="info">{selectedUser.socialProvider}</Badge>
+                  )}
                 </div>
               </div>
             </div>
-
-            {/* User Info Grid */}
+            {/* About */}
+            {selectedUser.about && (
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  About
+                </h4>
+                <p className="text-gray-700 dark:text-gray-300">
+                  {selectedUser.about}
+                </p>
+              </div>
+            )}
+            {/* Grid Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
+              {/* Contact */}
+              <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <h4 className="font-semibold text-gray-900 dark:text-white">
-                  Contact Information
+                  Contact
                 </h4>
-                <div className="space-y-2">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Phone
-                    </label>
-                    <p className="text-gray-900 dark:text-white">
-                      {selectedUser.phone || "Not provided"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Address
-                    </label>
-                    <p className="text-gray-900 dark:text-white">
-                      {selectedUser.address || "Not provided"}
-                    </p>
+                <p>
+                  <strong>Phone:</strong> {selectedUser.phone || "Not provided"}
+                </p>
+                <p>
+                  <strong>Email Verified:</strong>{" "}
+                  {selectedUser.emailVerified ? "Yes" : "No"}
+                </p>
+                <p>
+                  <strong>Address:</strong>{" "}
+                  {selectedUser.address || "Not provided"}
+                </p>
+              </div>
+              {/* Account */}
+              <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <h4 className="font-semibold text-gray-900 dark:text-white">
+                  Account
+                </h4>
+                <p>
+                  <strong>Member Since:</strong>{" "}
+                  {formatDate(selectedUser.createdAt)}
+                </p>
+                <p>
+                  <strong>Onboarded:</strong>{" "}
+                  {selectedUser.isOnboarded ? "Yes" : "No"}
+                </p>
+              </div>
+              {/* Interests */}
+              {selectedUser.interests && (
+                <div className="space-y-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 dark:text-white">
+                    Interests
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedUser?.interests?.length > 0 ? (  selectedUser.interests.map((i, idx) => (
+                      <Badge key={idx} variant="secondary">
+                        {i}
+                      </Badge>
+                    ))) : (<span className="text-gray-500">Not provided</span>)}
+                  
                   </div>
                 </div>
-              </div>
+              )}
+              {/* Skills */}
+              {selectedUser.skills && (
+                <div className="space-y-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 dark:text-white">
+                    Skills
+                  </h4>
+                <div className="flex flex-wrap gap-2">
+  {selectedUser?.skills?.length > 0 ? (
+    selectedUser.skills.map((s, idx) => (
+      <Badge key={idx}>{s}</Badge>
+    ))
+  ) : (
+    <span className="text-gray-500">Not provided</span>
+  )}
+</div>
 
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900 dark:text-white">
-                  Account Statistics
-                </h4>
-                <div className="space-y-2">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Total Transactions
-                    </label>
-                    <p className="text-gray-900 dark:text-white">
-                      {selectedUser.totalTransactions}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Total Spent
-                    </label>
-                    <p className="text-gray-900 dark:text-white">
-                      ${selectedUser.totalSpent.toFixed(2)}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Member Since
-                    </label>
-                    <p className="text-gray-900 dark:text-white">
-                      {formatDate(selectedUser.createdAt)}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Last Login
-                    </label>
-                    <p className="text-gray-900 dark:text-white">
-                      {selectedUser.lastLogin
-                        ? formatDateTime(selectedUser.lastLogin)
-                        : "Never"}
-                    </p>
-                  </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => handleChat(selectedUser)}
-                icon={<MessageSquare className="w-4 h-4" />}
-              >
-                Start Chat
-              </Button>
-              <Button
-                variant={selectedUser.isBlocked ? "success" : "danger"}
-                onClick={() => {
-                  handleToggleBlock(selectedUser);
-                  setShowDetailModal(false);
-                }}
-                icon={
-                  selectedUser.isBlocked ? (
-                    <Shield className="w-4 h-4" />
-                  ) : (
-                    <ShieldOff className="w-4 h-4" />
-                  )
-                }
-              >
-                {selectedUser.isBlocked ? "Unblock User" : "Block User"}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowDetailModal(false);
-                  handleEdit(selectedUser);
-                }}
-                icon={<Edit className="w-4 h-4" />}
-              >
-                Edit User
-              </Button>
+              )}
+              {/* University */}
+              {selectedUser.university && (
+                <div className="space-y-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg col-span-2">
+                  <h4 className="font-semibold text-gray-900 dark:text-white">
+                    University
+                  </h4>
+                  <p>
+                    <strong>Name:</strong> {selectedUser.university.name}
+                  </p>
+                  <p>
+                    <strong>Major:</strong> {selectedUser.university.major}
+                  </p>
+                  <p>
+                    <strong>Graduation Year:</strong>{" "}
+                    {selectedUser.university.graduationYear}
+                  </p>
+                </div>
+              )}
+              {/* QR Code */}
+              {/* {selectedUser.qrCode && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg col-span-2 flex justify-center">
+                  <img
+                    src={selectedUser.qrCode}
+                    alt="QR Code"
+                    className="w-40 h-40"
+                  />
+                </div>
+              )} */}
             </div>
           </div>
         )}
       </Modal>
+<Modal
+  isOpen={showConfirmModal}
+  onClose={() => setShowConfirmModal(false)}
+  title="Confirm Action"
+  size="sm"
+>
+  {actionUser && (
+    <div className="space-y-4">
+      <p className="text-gray-700 dark:text-gray-300">
+        Are you sure you want to{" "}
+        <strong>{actionStatus === false ? "block" : "unblock"}</strong>{" "}
+        <span className="font-semibold">{actionUser.name}</span>?
+      </p>
+
+      <div className="flex justify-end space-x-3">
+        <Button
+          variant="outline"
+          onClick={() => setShowConfirmModal(false)}
+        >
+          Cancel
+        </Button>
+
+        <Button
+          variant={actionStatus === false ? "danger" : "success"}
+          onClick={async () => {
+            await blockUser(actionUser._id, actionStatus); // pass boolean
+            setShowConfirmModal(false);
+            // Refresh list after block/unblock
+            getAllUsers(); 
+          }}
+        >
+          {actionStatus === false ? "Block User" : "Unblock User"}
+        </Button>
+      </div>
+    </div>
+  )}
+</Modal>
+
+
+
     </div>
   );
 };

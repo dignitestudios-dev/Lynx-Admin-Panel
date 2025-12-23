@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { SECURITY_CONFIG } from "../config/constants";
 import { handleError, handleSuccess } from "../utils/helpers";
 import { api } from "../lib/services";
+import Cookies from "js-cookie";
 
 const AuthContext = createContext();
 
@@ -15,112 +16,73 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadingAuthActions, setLoadingAuthActions] = useState(false);
+
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [lockedUntil, setLockedUntil] = useState(null);
   const [remainingLockTime, setRemainingLockTime] = useState(null);
 
-  // Check if user is locked out
+  /* =========================
+     Lockout Helpers
+  ========================== */
+
   const isLockedOut = () => {
-    const lockedUntilCache = localStorage.getItem("lockedUntil");
-    if (!lockedUntilCache) return false;
-    return new Date() < new Date(lockedUntilCache);
+    if (!lockedUntil) return false;
+    return new Date() < new Date(lockedUntil);
   };
 
-  // Initialize auth state
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        const userData = localStorage.getItem("userData");
+  /* =========================
+     Login
+  ========================== */
 
-        if (token && userData) {
-          const parsedUser = JSON.parse(userData);
-
-          setUser(parsedUser);
-        }
-      } catch (error) {
-        console.error("Auth initialization error:", error);
-        // Clear corrupted auth data
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("userData");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-  }, []);
-
-  // Login function
   const login = async (email, password) => {
     if (isLockedOut()) {
-      const remainingTime = Math.ceil(
-        (new Date(lockedUntil) - new Date()) / 1000 / 60
+      const remainingMinutes = Math.ceil(
+        (new Date(lockedUntil) - new Date()) / 60000
       );
       return {
         success: false,
-        error: `Account locked. Try again in ${remainingTime} minutes.`,
+        error: `Account locked. Try again in ${remainingMinutes} minutes.`,
       };
     }
 
     setLoading(true);
 
     try {
-      // Generate device information
       const deviceuniqueid = `device-${Date.now()}-${Math.floor(
         Math.random() * 10000
       )}`;
       const devicemodel = navigator.userAgent || "Unknown Device";
 
-      // const response = await api.login({
-      //   email,
-      //   password,
-      //   deviceuniqueid,
-      //   devicemodel,
-      // });
+      const response = await api.login({
+        email,
+        password,
+      });
 
-      const response = {
-        data: {
-          user: {
-            name: "Admin",
-            role: "admin"
-          },
-          token: "123123123",
-        }
-      }
-
-      const userData = response?.data?.user;
-      const token = response?.data?.token;
-
-      // Store auth data
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("userData", JSON.stringify(userData));
-
-      setUser(userData);
+      // const response = {
+      //   data: {
+      //     user: { name: "Admin", role: "admin" },
+      //     token: "123123123",
+      //   },
+      // };
+      console.log(response, "ddddd");
+      setUser(response.data.user);
       setLoginAttempts(0);
-      localStorage.setItem("loginAttempts", 0);
       setLockedUntil(null);
-      localStorage.setItem("lockedUntil", JSON.stringify(null));
 
-      handleSuccess(response.message, "Login successful");
-      return { success: true, user: userData };
+      handleSuccess("Login successful");
+      return { success: true, user: response.data.user };
     } catch (error) {
-      let loginAttemptsCache = localStorage.getItem("loginAttempts");
-      if (loginAttemptsCache) {
-        loginAttemptsCache = parseInt(loginAttemptsCache, 10);
-      }
-      const newAttempts = loginAttemptsCache + 1;
+      const newAttempts = loginAttempts + 1;
       setLoginAttempts(newAttempts);
-      localStorage.setItem("loginAttempts", newAttempts);
 
       if (newAttempts >= SECURITY_CONFIG.maxLoginAttempts) {
         const lockoutEnd = new Date(
           Date.now() + SECURITY_CONFIG.lockoutDuration
         );
         setLockedUntil(lockoutEnd.toISOString());
-        localStorage.setItem("lockedUntil", lockoutEnd.toISOString());
+
         return {
           success: false,
           error: `Too many failed attempts. Account locked for ${
@@ -141,33 +103,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
+  /* =========================
+     Logout
+  ========================== */
+
   const logout = async () => {
     setLoading(true);
-
-    try {
-      await api.logout();
-      // Clear auth data
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("userData");
-
+    try { const response = await api.logout();
       setUser(null);
       setLoginAttempts(0);
-      localStorage.setItem("loginAttempts", 0);
       setLockedUntil(null);
-      localStorage.setItem("lockedUntil", JSON.stringify(null));
 
       handleSuccess("Logout successful");
       return { success: true };
     } catch (error) {
       handleError(error);
-      return { success: false, error: "Logout failed." };
+      return { success: false };
     } finally {
       setLoading(false);
     }
   };
 
-  // Forgot password function
+  /* =========================
+     Forgot Password
+  ========================== */
+
   const forgotPassword = async (payload) => {
     setLoadingAuthActions(true);
     try {
@@ -181,140 +141,132 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Verify OTP function
+  /* =========================
+     Verify OTP
+  ========================== */
+
   const verifyOTP = async (payload) => {
     setLoadingAuthActions(true);
     try {
-      // Generate device information
       const deviceuniqueid = `device-${Date.now()}-${Math.floor(
-        Math.random() * 10000
+        Math.random() * 2000
       )}`;
       const devicemodel = navigator.userAgent || "Unknown Device";
 
-      const payloadWithHeaders = {
+      const response = await api.verifyOTP({
         ...payload,
-        deviceuniqueid,
-        devicemodel,
-      };
+      });
 
-      const response = await api.verifyOTP(payloadWithHeaders);
-      const userData = response.data.user;
-      const token = response.data.token;
+      const token = response?.token;
 
-      // Store auth data
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("userData", JSON.stringify(userData));
+      if (token) {
+        Cookies.set("access_token", token, {
+          expires: 0.02, // ⏳ ~30 minutes (OTP token short-lived hota hai)
+          sameSite: "strict",
+        });
+      }
 
-      setUser(userData);
-      handleSuccess(response.message, "OTP verified successfully");
+      // setUser(response.data.user);
+      handleSuccess("OTP verified successfully");
       return { success: true };
     } catch (error) {
       handleError(error);
-      return {
-        success: false,
-        error: error.message || "OTP verification failed.",
-      };
+      return { success: false };
     } finally {
       setLoadingAuthActions(false);
     }
   };
 
-  // Update password function
+  /* =========================
+     Update Password
+  ========================== */
+
   const updatePassword = async (payload) => {
     setLoadingAuthActions(true);
     try {
       const response = await api.updatePassword(payload);
-
-      if (response.success) {
-        handleSuccess(response.message, "Password updated successfully");
-        return { success: true };
-      } else {
-        throw new Error(response.message || "Failed to update password.");
-      }
+      handleSuccess("Password updated successfully");
+      return response;
     } catch (error) {
       handleError(error);
-      return {
-        success: false,
-        error: error.message || "Failed to update password.",
-      };
+      return { success: false };
     } finally {
       setLoadingAuthActions(false);
     }
   };
 
-  // Update password auth function
   const updatePasswordAuth = async (payload) => {
     setLoadingAuthActions(true);
+
     try {
-      const response = await api.updatePasswordAuth(payload);
+      // 🔑 token cookies se uthao
+      const token = Cookies.get("access_token");
 
-      if (response.success) {
-        handleSuccess(response.message, "Password updated successfully");
+      const response = await api.updatePasswordAuth({
+        ...payload,
+        token, // ✅ body me token bhej diya
+      });
 
-        // Clear auth data
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("userData");
+      handleSuccess("Password updated successfully");
 
-        setUser(null);
-        setLoginAttempts(0);
-        localStorage.setItem("loginAttempts", 0);
-        setLockedUntil(null);
-        localStorage.setItem("lockedUntil", JSON.stringify(null));
-        return { success: true };
-      } else {
-        throw new Error(response.message || "Failed to update password.");
-      }
+      // 🧹 cleanup
+      Cookies.remove("access_token");
+
+      setUser(null);
+      setLoginAttempts(0);
+      setLockedUntil(null);
+
+      return response;
     } catch (error) {
       handleError(error);
-      return {
-        success: false,
-        error: error.message || "Failed to update password.",
-      };
+      return { success: false };
     } finally {
       setLoadingAuthActions(false);
     }
   };
 
-  // Register function
+  /* =========================
+     Register
+  ========================== */
+
   const register = async (email, password, name) => {
     setLoading(true);
     try {
       const response = await api.register({ email, password, name });
-      handleSuccess(response.message, "User registered successfully");
-      return { success: true, user: response.data.user };
+      handleSuccess("User registered successfully");
+      return response;
     } catch (error) {
       handleError(error);
-      return { success: false, error: "Registration failed." };
+      return { success: false };
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (isLockedOut()) {
-      const interval = setInterval(() => {
-        const lockedUntilCache = localStorage.getItem("lockedUntil");
-        if (lockedUntilCache) {
-          const remainingTime = Math.max(
-            new Date(lockedUntilCache) - new Date(),
-            0
-          );
-          setRemainingLockTime(remainingTime);
-          if (remainingTime === 0) {
-            clearInterval(interval);
-            setLockedUntil(null);
-            setLoginAttempts(0);
-            localStorage.removeItem("lockedUntil");
-            localStorage.setItem("loginAttempts", "0");
-          }
-        }
-      }, 1000);
+  /* =========================
+     Lock Timer
+  ========================== */
 
-      return () => clearInterval(interval);
-    } else {
-      setRemainingLockTime(null);
-    }
+  useEffect(() => {
+    if (!lockedUntil) return;
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(new Date(lockedUntil) - new Date(), 0);
+      setRemainingLockTime(remaining);
+
+      if (remaining === 0) {
+        clearInterval(interval);
+        setLockedUntil(null);
+        setLoginAttempts(0);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, [lockedUntil]);
+
+  /* =========================
+     Context Value
+  ========================== */
 
   const value = {
     user,

@@ -6,7 +6,7 @@ import Card from "../../components/ui/Card";
 import { useAuth } from "../../contexts/AuthContext";
 
 const VerifyOTP = () => {
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", ""]);
   const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
   const [loadingResend, setLoadingResend] = useState(false);
@@ -71,12 +71,12 @@ const VerifyOTP = () => {
     setError("");
 
     // Auto-focus next input
-    if (value && index < 5) {
+    if (value && index < 4) {
       inputRefs.current[index + 1]?.focus();
     }
 
     // Auto-submit when all fields are filled
-    if (newOtp.every((digit) => digit !== "") && newOtp.join("").length === 6) {
+    if (newOtp.every((digit) => digit !== "") && newOtp.join("").length === 4) {
       handleSubmit(newOtp.join(""));
     }
   };
@@ -88,7 +88,7 @@ const VerifyOTP = () => {
   };
 
   const handleSubmit = async (otpValue = otp.join("")) => {
-    if (otpValue.length !== 6) {
+    if (otpValue.length !== 4) {
       setError("Please enter all 6 digits");
       return;
     }
@@ -98,12 +98,14 @@ const VerifyOTP = () => {
     const payload = {
       email: location?.state?.email,
       otp: otpValue,
-      role: "admin",
+      type: "forgot-password",
     };
 
-    const response = await verifyOTP(payload);
+    console.log("payload: ",payload)
 
-    if (response.success) {
+    const response = await verifyOTP(payload);
+    console.log("response: ",response)
+    if (response?.success) {
       // Clear localStorage on successful verification
       localStorage.removeItem(TIMER_KEY);
 
@@ -111,7 +113,7 @@ const VerifyOTP = () => {
       navigate("/auth/reset-password", { state: { email, verified: true } });
     } else {
       setError(response.message || "Invalid OTP. Please try again.");
-      setOtp(["", "", "", "", "", ""]);
+      setOtp(["", "", "", ""]);
       inputRefs.current[0]?.focus();
     }
   };
@@ -123,7 +125,7 @@ const VerifyOTP = () => {
     // Simulate API call
     const payload = {
       email: location?.state?.email,
-      role: "admin",
+      type: "forgot-password",
     };
     const success = await forgotPassword(payload);
 
@@ -135,7 +137,7 @@ const VerifyOTP = () => {
 
       setTimeLeft(600); // Reset timer
       setCanResend(false);
-      setOtp(["", "", "", "", "", ""]);
+      setOtp(["", "", "", ""]);
       inputRefs.current[0]?.focus();
     } else {
       setError("Failed to resend OTP. Please try again.");

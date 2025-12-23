@@ -1,67 +1,67 @@
 import axios from "axios";
+import Cookies from "js-cookie";
 import { API_CONFIG, PAGINATION_CONFIG } from "../config/constants";
 
-// Create an Axios instance
+/* ================================
+   Axios Instance
+================================ */
 const API = axios.create({
   baseURL: API_CONFIG.baseURL,
-  timeout: API_CONFIG.timeout, // Set a timeout (optional)
+  timeout: API_CONFIG.timeout,
   headers: API_CONFIG.headers,
 });
 
-// Request Interceptor
+/* ================================
+   Request Interceptor
+================================ */
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("authToken"); // Retrieve token from storage
-    console.log("req token: ", token);
+    const token = Cookies.get("authToken");
+
     if (token) {
-      config.headers.authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor
+/* ================================
+   Response Interceptor
+================================ */
 API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401) {
-      localStorage.removeItem("authToken"); // Remove token if unauthorized
-      window.location.href = "/auth/login"; // Redirect to login page
+      Cookies.remove("authToken");
+      window.location.href = "/auth/login";
     }
-    console.log(error);
-    console.log("API Error:", error.response?.data || error);
+
     return Promise.reject(error);
   }
 );
 
-// Centralized API Handling functions start
+/* ================================
+   Centralized API Helpers
+================================ */
 const handleApiError = (error) => {
   if (axios.isAxiosError(error)) {
-    const errorMessage =
-      error.response?.data?.message ||
-      error.message ||
-      "An unexpected error occurred";
-    throw new Error(errorMessage);
+    throw new Error(
+      error.response?.data?.message || error.message || "Something went wrong"
+    );
   }
-  throw new Error(error?.message || error || "An Unexpected error occurred");
+  throw new Error(error?.message || "Unexpected error");
 };
 
 const handleApiResponse = (response) => {
-  const responseData = response.data;
-  console.log("API response run");
-
-  // Check if success is false and throw an error
-  if (!responseData.success) {
-    throw new Error(
-      responseData.message || "Something went wrong, Please try again!"
-    );
+  if (!response?.data?.success) {
+    throw new Error(response?.data?.message || "Request failed, try again");
   }
-
-  return responseData; // Only return the response data {status, message, data}
+  return response.data;
 };
 
-const apiHandler = async (apiCall) => {
+const   apiHandler = async (apiCall) => {
   try {
     const response = await apiCall();
     return handleApiResponse(response);
@@ -70,13 +70,12 @@ const apiHandler = async (apiCall) => {
   }
 };
 
-// Centralized API Handling functions end
-
-// Auth APIs
-
-const login = (credentials) =>
-  apiHandler(() =>
-    API.post("/auth/login", credentials, {
+/* ================================
+   AUTH APIs
+================================ */
+const login = async (credentials) => {
+  const response = await apiHandler(() =>
+    API.post("/api/admin/login", credentials, {
       headers: {
         deviceuniqueid: credentials.deviceuniqueid,
         devicemodel: credentials.devicemodel,
@@ -84,12 +83,26 @@ const login = (credentials) =>
     })
   );
 
+  const token = response?.data?.accessToken;
+
+  if (token) {
+    Cookies.set("authToken", token, {
+      expires: 7,
+      
+    });
+    window.location.href = "/";
+  }
+
+  return response;
+};
+
 const forgotPassword = (payload) =>
-  apiHandler(() => API.post("/auth/forgot", payload));
+  apiHandler(() => API.post("/api/auth/send-otp/forgot-password", payload));
+
 
 const verifyOTP = (payload) =>
   apiHandler(() =>
-    API.post("/auth/verify-otp", payload, {
+    API.post("/api/auth/verify-otp", payload, {
       headers: {
         deviceuniqueid: payload.deviceuniqueid,
         devicemodel: payload.devicemodel,
@@ -97,28 +110,27 @@ const verifyOTP = (payload) =>
     })
   );
 
-const updatePassword = (payload) =>
-  apiHandler(() => API.post("/auth/update-password", payload));
-
 const updatePasswordAuth = (payload) =>
-  apiHandler(() => API.post("/auth/update-password-auth", payload));
+  apiHandler(() => API.post("/api/auth/reset-password", payload));
 
-const logout = () => apiHandler(() => API.post("/auth/logout"));
+/* ✅ CLIENT-SIDE LOGOUT (NO API CALL) */
+const logout = () => {
+  Cookies.remove("authToken");
+  window.location.href = "/auth/login";
+};
 
-// App Configs API
-const getAppConfigs = () => apiHandler(() => API.get("/global/config"));
-
-const updateAppConfigs = (payload) =>
-  apiHandler(() => API.put("/global/config", payload));
-
-// Dashboard Analytics API
+/* ================================
+   DASHBOARD
+================================ */
 const getDashboardAnalytics = () =>
-  apiHandler(() => API.get("/dashboard/analytics"));
+  apiHandler(() => API.get("/api/admin/dashboard"));
 
-// Products API
-const createProduct = (productData) =>
+/* ================================
+   PRODUCTS
+================================ */
+const createProduct = (data) =>
   apiHandler(() =>
-    API.post(`/product`, productData, {
+    API.post("/product", data, {
       headers: { "Content-Type": "multipart/form-data" },
     })
   );
@@ -135,19 +147,20 @@ const getAllProducts = (
     )
   );
 
-const updateProduct = (id, productData) =>
-  apiHandler(() => API.put(`/product/${id}`, productData));
+const getProductById = (id) => apiHandler(() => API.get(`/product/${id}`));
+
+const updateProduct = (id, data) =>
+  apiHandler(() => API.put(`/product/${id}`, data));
 
 const deleteProduct = (id) => apiHandler(() => API.delete(`/product/${id}`));
 
-const getProductById = (id) => apiHandler(() => API.get(`/product/${id}`));
-
-// Categories API
-const createCategory = (categoryData) =>
-  apiHandler(() => API.post(`/category`, categoryData));
+/* ================================
+   CATEGORIES
+================================ */
+const createCategory = (data) => apiHandler(() => API.post("/category", data));
 
 const getAllCategories = (
-  status, // active or inactive
+  status,
   page = 1,
   limit = PAGINATION_CONFIG.defaultPageSize
 ) =>
@@ -155,14 +168,16 @@ const getAllCategories = (
     API.get(`/category?status=${status}&page=${page}&limit=${limit}`)
   );
 
-const updateCategory = (id, categoryData) =>
-  apiHandler(() => API.put(`/category/${id}`, categoryData));
+const getCategoryById = (id) => apiHandler(() => API.get(`/category/${id}`));
+
+const updateCategory = (id, data) =>
+  apiHandler(() => API.put(`/category/${id}`, data));
 
 const deleteCategory = (id) => apiHandler(() => API.delete(`/category/${id}`));
 
-const getCategoryById = (id) => apiHandler(() => API.get(`/category/${id}`));
-
-// Orders API
+/* ================================
+   ORDERS
+================================ */
 const getOrders = (
   paymentStatus,
   orderStatus,
@@ -171,7 +186,7 @@ const getOrders = (
   endDate,
   search,
   page = 1,
-  limit = API_CONFIG.pagination.defaultPageSize
+  limit = PAGINATION_CONFIG.defaultPageSize
 ) =>
   apiHandler(() =>
     API.get(
@@ -179,32 +194,40 @@ const getOrders = (
     )
   );
 
-const getOrdersByContact = (contactEmail) =>
-  apiHandler(() => API.get(`/order/contact?email=${contactEmail}`));
+const getOrdersByContact = (email) =>
+  apiHandler(() => API.get(`/order/contact?email=${email}`));
 
 const getOrderById = (id) => apiHandler(() => API.get(`/order/${id}`));
 
-const updateOrder = (id, orderData) =>
-  apiHandler(() => API.put(`/order/${id}`, orderData));
+const updateOrder = (id, data) =>
+  apiHandler(() => API.put(`/order/${id}`, data));
 
+/* ================================
+   EXPORT
+================================ */
 export const api = {
   login,
+  logout,
   forgotPassword,
   verifyOTP,
-  updatePassword,
-  updatePasswordAuth,
-  logout,
   getDashboardAnalytics,
-  getAllProducts,
-  getAllCategories,
+updatePasswordAuth,
+
+  // products
   createProduct,
-  createCategory,
+  getAllProducts,
+  getProductById,
   updateProduct,
   deleteProduct,
-  getProductById,
+
+  // categories
+  createCategory,
+  getAllCategories,
+  getCategoryById,
   updateCategory,
   deleteCategory,
-  getCategoryById,
+
+  // orders
   getOrders,
   getOrdersByContact,
   getOrderById,

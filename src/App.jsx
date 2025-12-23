@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+  import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppProvider } from "./contexts/AppContext";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -14,7 +14,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 // Main pages
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
-import Analytics from "./pages/Analytics";
+
 import ChangePassword from "./pages/ChangePassword";
 import Documentation from "./pages/Documentation";
 import Notifications from "./pages/Notifications";
@@ -30,6 +30,10 @@ import ChatSupport from "./pages/ChatSupport";
 import "./App.css";
 import { Toaster } from "react-hot-toast";
 import Categories from "./pages/Categories";
+import BlockUsers from "./pages/BlockUsers";
+import EventsManagement from "./pages/EventsManagement";
+import EventModeration from "./pages/EventModeration";
+import ReportedEvents from "./pages/ReportedEvents";
 
 function App() {
   return (
@@ -67,19 +71,15 @@ function App() {
                             <Route path="" element={<UserManagement />} />
                             <Route
                               path="blocked"
-                              element={
-                                <div className="p-6">
-                                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                    Blocked Users - Coming Soon
-                                  </h1>
-                                </div>
-                              }
+                              element={<BlockUsers />}
                             />
                           </Route>
 
-                          <Route path="/products">
-                            <Route path="" element={<Products />} />
-                            <Route path="categories" element={<Categories />} />
+                          <Route path="/events">
+                            <Route path="" element={<EventsManagement /> }/>
+                            <Route path="moderation" element={<EventModeration /> }/>
+                            <Route path="reported" element={<ReportedEvents /> }/>
+                           
                           </Route>
 
                           <Route path="/orders" element={<Orders />} />
@@ -114,7 +114,7 @@ function App() {
 
                           <Route path="/reports" element={<Reports />} />
 
-                          <Route path="/analytics" element={<Analytics />} />
+                        
 
                           <Route path="/settings">
                             <Route

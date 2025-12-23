@@ -1,10 +1,12 @@
+import path from "path";
+
 // App Configuration Constants
 export const APP_CONFIG = {
-  name: "Company Ipsum",
+  name: "LYNX",
   version: "1.0.0",
   description: "Company ipsum description here",
   author: "Company Ipsum",
-  logo: "/images/logo.svg",
+  logo: "images/logo.png",
   supportEmail: "support@company.com",
   companyUrl: "https://example.com",
 };
@@ -14,12 +16,12 @@ export const COLOR_CONFIG = {
   // Primary color - Main brand color
   primary: {
     name: "Red",
-    hex: "#F40E00",
+    hex: "#E00004",
   },
   // Secondary color - Accent color
   secondary: {
     name: "Orange",
-    hex: "#FB7559",
+    hex: "#E00004",
   },
 };
 
@@ -34,7 +36,7 @@ export const THEME_OPTIONS = {
 };
 
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:8080", // set in .env or hardcore here
+  baseURL: import.meta.env.VITE_BASE_URL || "https://api.lynxuni.com", // set in .env or hardcore here
   timeout: 100000, //your custom timeout for the API
   headers: {
     "Content-Type": "application/json",
@@ -54,7 +56,7 @@ export const API_CONFIG = {
 // Pagination Configuration
 export const PAGINATION_CONFIG = {
   defaultPageSize: 20,
-  pageSizeOptions: [5, 10, 20, 50, 100],
+  pageSizeOptions: [5, 10, 20, 50,],
   maxVisiblePages: 5,
 };
 
@@ -62,7 +64,7 @@ export const PAGINATION_CONFIG = {
 export const DATE_CONFIG = {
   format: "MM/dd/yyyy",
   timeFormat: "HH:mm:ss",
-  dateTimeFormat: "MM/dd/yyyy HH:mm:ss",
+  dateTimeFormat: "MM/dd/yyyy HH:mm",
   timezone: "UTC",
 };
 
@@ -81,60 +83,60 @@ export const MENU_ITEMS = [
     icon: "Users",
     path: "/users",
     children: [
-      { id: "users-list", label: "All Users", path: "/users" },
-      { id: "users-blocked", label: "Blocked Users", path: "/users/blocked" },
+      // { id: "users-list", label: "All Users", path: "/users" },
+      // { id: "users-blocked", label: "Blocked Users", path: "/users/blocked" },
     ],
   },
   {
-    id: "products",
-    label: "Products",
-    icon: "Package",
-    path: "/products",
+    id: "Event Control Panel",
+    label: "Events",
+    icon: "Calendar",
+    path: "/events",
     children: [
-      { id: "products-list", label: "All Products", path: "/products" },
-      { id: "categories", label: "Categories", path: "/products/categories" },
-    ],
+      // { id: "event-management", label: "Event Management", path: "/events" },
+      //   { id: "event-moderation", label: "Event Moderation", path: "/events/moderation" },
+      //   {id:"event-reports", label: "Reported Events", path: "/events/reported"}
+        
+      ],
   },
-  {
-    id: "orders",
-    label: "Orders",
-    icon: "ShoppingCart",
-    path: "/orders",
-    children: [],
-  },
-  {
-    id: "transactions",
-    label: "Transactions & Revenue",
-    icon: "CreditCard",
-    path: "/transactions",
-    children: [
-      {
-        id: "transactions-list",
-        label: "All Transactions",
-        path: "/transactions",
-      },
-      {
-        id: "revenue-breakdown",
-        label: "Revenue Breakdown",
-        path: "/transactions/revenue",
-      },
-    ],
-  },
-  {
-    id: "support",
-    label: "Support",
-    icon: "MessageSquare",
-    path: "/support",
-    children: [
-      {
-        id: "support-tickets",
-        label: "Support Tickets",
-        path: "/support/tickets",
-      },
-      { id: "chat-support", label: "Chat Support", path: "/support/chat" },
-      { id: "send-email", label: "Send Email", path: "/support/email" },
-    ],
-  },
+  // {
+  //   id: "orders",
+  //   label: "Orders",
+  //   icon: "ShoppingCart",
+  //   path: "/orders",
+  //   children: [],
+  // },
+  // {
+  //   id: "transactions",
+  //   label: "Transactions & Revenue",
+  //   icon: "CreditCard",
+  //   path: "/transactions",
+  //   children: [
+  //     {
+  //       id: "transactions-list",
+  //       label: "All Transactions",
+  //       path: "/transactions",
+  //     },
+  //     {
+  //       id: "revenue-breakdown",
+  //       label: "Revenue Breakdown",
+  //       path: "/transactions/revenue",
+  //     },
+  //   ],
+  // },
+  // {
+  //   id: "support",
+  //   label: "Support",
+  //   icon: "MessageSquare",
+  //   path: "/support",
+  //   children: [
+  //     {
+  //       id: "support-tickets",
+  //       label: "Support Tickets",
+  //       path: "/support/tickets",
+  //     },
+  //   ],
+  // },
   {
     id: "notifications",
     label: "Push Notifications",
@@ -149,34 +151,22 @@ export const MENU_ITEMS = [
     path: "/reports",
     children: [],
   },
-  {
-    id: "analytics",
-    label: "Analytics",
-    icon: "BarChart3",
-    path: "/analytics",
-    children: [],
-  },
-  {
-    id: "settings",
-    label: "Settings",
-    icon: "Settings",
-    path: "/settings",
-    children: [
-      {
-        id: "change-password",
-        label: "Change Password",
-        path: "/settings/change-password",
-      },
-      { id: "general", label: "General Settings", path: "/settings/general" },
-    ],
-  },
-  {
-    id: "docs",
-    label: "Documentation",
-    icon: "FileText",
-    path: "/docs",
-    children: [],
-  },
+
+  // {
+  //   id: "settings",
+  //   label: "Settings",
+  //   icon: "Settings",
+  //   path: "/settings",
+  //   children: [
+  //     {
+  //       id: "change-password",
+  //       label: "Change Password",
+  //       path: "/settings/change-password",
+  //     },
+  //     // { id: "general", label: "General Settings", path: "/settings/general" },
+  //   ],
+  // },
+
 ];
 
 // Authentication Routes

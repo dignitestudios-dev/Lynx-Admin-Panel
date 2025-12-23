@@ -164,7 +164,7 @@ const Sidebar = () => {
               <img
                 src={APP_CONFIG.logo}
                 alt={APP_CONFIG.name}
-                className="h-full max-h-6"
+                className="h-full max-h-16"
               />
             ) : (
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -175,7 +175,7 @@ const Sidebar = () => {
             )}
 
             {!sidebarCollapsed && (
-              <p className="flex-1 ml-3 text-lg font-semibold text-gray-900 dark:text-white transition-opacity duration-300 truncate">
+              <p className="flex-1 ml-3 text-xl font-semibold text-gray-900 dark:text-white transition-opacity duration-300 truncate">
                 {APP_CONFIG.name}
               </p>
             )}
@@ -196,27 +196,7 @@ const Sidebar = () => {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <div
-            className={`flex items-center ${
-              sidebarCollapsed ? "justify-center" : "gap-3"
-            } p-3 bg-gray-50 dark:bg-gray-800 rounded-lg`}
-          >
-            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <div className="w-2 h-2 bg-white rounded-full"></div>
-            </div>
-            {!sidebarCollapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  System Status
-                </p>
-                <p className="text-xs text-green-600 dark:text-green-400">
-                  All systems operational
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+      
       </aside>
     </>
   );

@@ -2,11 +2,12 @@ import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { AUTH_ROUTES } from '../../config/constants'
-
+import Cookie from 'js-cookie'
 const ProtectedRoute = ({ children, requiredPermission = null, requiredRole = null }) => {
-  const { isAuthenticated, loading, hasPermission, hasRole } = useAuth()
+  const { isAuthenticated, loading,  } = useAuth()
   const location = useLocation()
-
+console.log(isAuthenticated,"isAuthenticated")
+  const token=Cookie.get("authToken")
   // Show loading spinner while checking authentication
   if (loading) {
     return (
@@ -20,33 +21,33 @@ const ProtectedRoute = ({ children, requiredPermission = null, requiredRole = nu
   }
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated) {
+  if (!token) {
     return <Navigate to={AUTH_ROUTES.LOGIN} state={{ from: location }} replace />
   }
 
   // Check required permission
-  if (requiredPermission && !hasPermission(requiredPermission)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h1>
-          <p className="text-gray-600 dark:text-gray-400">You don't have permission to access this page.</p>
-        </div>
-      </div>
-    )
-  }
+  // if (requiredPermission && !hasPermission(requiredPermission)) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+  //       <div className="text-center">
+  //         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h1>
+  //         <p className="text-gray-600 dark:text-gray-400">You don't have permission to access this page.</p>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
-  // Check required role
-  if (requiredRole && !hasRole(requiredRole)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h1>
-          <p className="text-gray-600 dark:text-gray-400">You don't have the required role to access this page.</p>
-        </div>
-      </div>
-    )
-  }
+  // // Check required role
+  // if (requiredRole && !hasRole(requiredRole)) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+  //       <div className="text-center">
+  //         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h1>
+  //         <p className="text-gray-600 dark:text-gray-400">You don't have the required role to access this page.</p>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   return children
 }

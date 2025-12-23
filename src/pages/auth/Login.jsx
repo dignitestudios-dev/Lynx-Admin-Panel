@@ -17,10 +17,10 @@ const Login = () => {
   const [error, setError] = useState("");
 
   // Redirect if already logged in
-  if (user) {
-    const from = location.state?.from?.pathname || "/";
-    return <Navigate to={from} replace />;
-  }
+  // if (user) {
+  //   const from = location.state?.from?.pathname || "/auth/verify-otp";
+  //   return <Navigate to={from} replace />;
+  // }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,6 +38,7 @@ const Login = () => {
     }
 
     const result = await login(formData.email, formData.password);
+    
     if (!result.success) {
       setError(result.error);
     }

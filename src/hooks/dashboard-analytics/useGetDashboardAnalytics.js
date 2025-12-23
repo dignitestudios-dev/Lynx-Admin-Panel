@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "../../contexts/AppContext";
 import { handleError } from "../../utils/helpers";
 import { api } from "../../lib/services";
@@ -9,27 +9,26 @@ const useGetDashboardAnalytics = () => {
 
   const getDashboardAnalytics = async () => {
     setLoading(true);
-
     try {
-      const response = await api.getDashboardAnalytics();
-      setDashboardAnalytics(response.data);
+      const res = await api.getDashboardAnalytics();
+      const data = res?.data|| {};
+      setDashboardAnalytics(data);
+      
     } catch (error) {
       handleError(error);
     } finally {
       setLoading(false);
     }
   };
-
   useEffect(() => {
-    if (!dashboardAnalytics) {
+    // Fetch only if no data yet
+    if (!dashboardAnalytics || Object.keys(dashboardAnalytics).length === 0) {
       getDashboardAnalytics();
     }
   }, []);
-
-  return {
-    loading,
-    getDashboardAnalytics,
-  };
+  
+  console.log("Dashboard Analytics Data:", dashboardAnalytics);
+  return { loading, getDashboardAnalytics };
 };
 
 export default useGetDashboardAnalytics;

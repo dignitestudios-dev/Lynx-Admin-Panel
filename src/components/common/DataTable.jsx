@@ -25,7 +25,7 @@ const DataTable = ({
   totalPages = 1,
   totalData = 0,
   currentPage = 1,
-  pageSize = PAGINATION_CONFIG.defaultPageSize,
+  pageSize = PAGINATION_CONFIG,
   searchTerm = "",
   searchPlaceholder = "Search...",
   onPageChange,

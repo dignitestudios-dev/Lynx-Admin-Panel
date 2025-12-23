@@ -96,26 +96,12 @@ const Header = () => {
             {/* User dropdown menu */}
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 scale-in">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {user?.name}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {user?.email}
-                  </p>
-                </div>
+               
                 <div className="py-2">
-                  <Link
-                    to="/settings/change-password"
-                    onClick={() => setShowUserMenu(false)}
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <Shield className="w-4 h-4 mr-3" />
-                    Change Password
-                  </Link>
+           
                   <button
                     onClick={handleLogout}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    className="flex items-center w-full px-4  text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                   >
                     <LogOut className="w-4 h-4 mr-3" />
                     Sign out

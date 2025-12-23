@@ -67,7 +67,8 @@ const ResetPassword = () => {
 
   const onSubmit = async (data) => {
     const payload = {
-      password: data.password,
+      newPassword: data.password,
+      
     };
 
     const response = await updatePasswordAuth(payload);
