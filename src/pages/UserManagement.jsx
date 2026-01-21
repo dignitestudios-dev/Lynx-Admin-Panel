@@ -83,19 +83,28 @@ useGetAllUsers(filters, searchDebounce, pageSize, currentPage);
       key: "name",
       label: "Name",
       render: (_, user) => (
-        <div className="flex items-center space-x-3">
-          <img
-            src={user.pfp}
-            alt={user.name}
-            className="w-8 h-8 rounded-full object-cover"
-          />
-          <div>
-            <p className="font-medium text-gray-900 dark:text-white">
-              {user.name}
-            </p>
-            <p className="text-sm text-gray-500">{user.email}</p>
-          </div>
-        </div>
+      <div className="flex items-center space-x-3">
+  {user?.pfp ? (
+    <img
+      src={user.pfp}
+      alt={user.name}
+      onError={(e) => (e.currentTarget.style.display = "none")}
+      className="w-8 h-8 rounded-full object-cover"
+    />
+  ) : (
+    <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg">
+      <img src="/images/no-dp_40.jpg" alt="" className="rounded-full" />
+    </div>
+  )}
+
+  <div>
+    <p className="font-medium text-gray-900 dark:text-white">
+      {user.name}
+    </p>
+    <p className="text-sm text-gray-500">{user.email}</p>
+  </div>
+</div>
+
       ),
     },
     {

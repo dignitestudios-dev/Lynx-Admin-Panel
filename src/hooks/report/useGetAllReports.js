@@ -43,7 +43,7 @@ const getAllReports = async (page = currentPage, pageLimit = limit) => {
 
   // Fetch single report details
   const getReportDetails = async (id) => {
-    setLoading(true);
+   
     try {
       const response = await axios.get(`${API_CONFIG.baseURL}/api/admin/reports/${id}`, {
         headers: { Authorization: `Bearer ${token}` },

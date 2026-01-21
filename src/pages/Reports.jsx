@@ -18,7 +18,7 @@ const Reports = () => {
     reports,
     loading,
     totalData,
-   totalPages,
+    totalPages,
     selectedReport,
     getReportDetails,
     restrictUser,
@@ -32,7 +32,7 @@ const Reports = () => {
     weeks: "1",
     reason: "",
   });
-console.log(reports)
+  console.log(reports);
   // const [filters, setFilters] = useState({
   //   status: "",
   //   type: "",
@@ -57,7 +57,7 @@ console.log(reports)
     try {
       const updatedUser = await restrictUser(
         restrictUserData._id,
-        restrictForm
+        restrictForm,
       );
 
       // Update local state so button disables immediately
@@ -65,8 +65,8 @@ console.log(reports)
         prev.map((r) =>
           r.reportedUser._id === restrictUserData._id
             ? { ...r, reportedUser: { ...r.reportedUser, ...updatedUser } }
-            : r
-        )
+            : r,
+        ),
       );
 
       setShowRestrictModal(false);
@@ -111,16 +111,18 @@ console.log(reports)
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 rounded-full flex items-center justify-center bg-red-100">
             <img
-              src={report.reportedUser.pfp}
+              src={report?.reportedUser?.pfp}
               alt=""
               className="w-8 h-8 rounded-full"
             />
           </div>
           <div>
             <p className="font-medium text-gray-900 dark:text-white">
-              {report.reportedUser.name}
+              {report?.reportedUser?.name}
             </p>
-            <p className="text-sm text-gray-500">{report.reportedUser.email}</p>
+            <p className="text-sm text-gray-500">
+              {report?.reportedUser?.email}
+            </p>
           </div>
         </div>
       ),
@@ -146,7 +148,7 @@ console.log(reports)
       key: "actions",
       label: "Actions",
       render: (_, report) => {
-        const isRestricted = report.reportedUser.isRestricted;
+        const isRestricted = report?.reportedUser?.isRestricted;
 
         return (
           <div className="flex items-center space-x-2">
@@ -210,25 +212,21 @@ console.log(reports)
         />
       </Card> */}
 
-     <DataTable
-  title="User Reports"
-  data={filteredReports}
-  columns={columns}
- 
-  
- 
-  addButton={false}
- 
-  loading={loading}
-  totalData={totalData}
+      <DataTable
+        title="User Reports"
+        data={filteredReports}
+        columns={columns}
+        addButton={false}
+        loading={loading}
+        totalData={totalData}
         totalPages={totalPages}
         currentPage={currentPage}
         pageSize={pageSize}
-        onPageChange={setCurrentPage}     // total number of records
- onPageSizeChange={setPageSize} // function to handle page change
-/>
+        onPageChange={setCurrentPage} // total number of records
+        onPageSizeChange={setPageSize} // function to handle page change
+      />
 
-{selectedReport && (
+      {selectedReport && (
         <Modal
           isOpen={showDetailModal}
           onClose={() => setShowDetailModal(false)}
@@ -236,47 +234,78 @@ console.log(reports)
           size="xl"
         >
           <div className="space-y-6">
-
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
               <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white">Reporter</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white">
+                  Reporter
+                </h4>
                 <div className="flex items-center space-x-3 mt-2">
-                  <img src={selectedReport.reporter.pfp} alt="" className="w-10 h-10 rounded-full" />
+                  <img
+                    src={selectedReport.reporter.pfp}
+                    alt=""
+                    className="w-10 h-10 rounded-full"
+                  />
                   <div>
                     <p>{selectedReport.reporter.name}</p>
-                    <p className="text-sm text-gray-500">{selectedReport.reporter.email}</p>
+                    <p className="text-sm text-gray-500">
+                      {selectedReport.reporter.email}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white">Reported User</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white">
+                  Reported User
+                </h4>
                 <div className="flex items-center space-x-3 mt-2">
-                  <img src={selectedReport.reportedUser.pfp} alt="" className="w-10 h-10 rounded-full" />
+                  <img
+                    src={selectedReport?.reportedUser?.pfp}
+                    alt=""
+                    className="w-10 h-10 rounded-full"
+                  />
                   <div>
-                    <p>{selectedReport.reportedUser.name}</p>
-                    <p className="text-sm text-gray-500">{selectedReport.reportedUser.email}</p>
+                    <p>{selectedReport?.reportedUser?.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {selectedReport?.reportedUser?.email}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-{selectedReport.type === "event" &&
-            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
-              <h2 className="font-semibold text-gray-900 dark:text-white">Event Details</h2>
-              <div><h2 className="font-semibold text-gray-900 dark:text-white">Title</h2>
-               <p> {selectedReport.event.title}</p></div>
-             <div> <h2 className="font-semibold text-gray-900 dark:text-white">Reason</h2>
-              <p>{selectedReport.reason}</p></div>
-            </div>}
+            {selectedReport.type === "event" && (
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
+                <h2 className="font-semibold text-gray-900 dark:text-white">
+                  Event Details
+                </h2>
+                <div>
+                  <h2 className="font-semibold text-gray-900 dark:text-white">
+                    Title
+                  </h2>
+                  <p> {selectedReport?.event.title}</p>
+                </div>
+                <div>
+                  {" "}
+                  <h2 className="font-semibold text-gray-900 dark:text-white">
+                    Reason
+                  </h2>
+                  <p>{selectedReport?.reason}</p>
+                </div>
+              </div>
+            )}
 
             <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
-              <h4 className="font-semibold text-gray-900 dark:text-white">Report Status</h4>
-             
-              <p>Type: {selectedReport.type}</p>
-              <p>Updated At: {formatDate(selectedReport.updatedAt)}</p>
-              <p>Restricted Until: {formatDateTime(selectedReport.reportedUser.restrictedUntil)}</p>
-              <p>Reason: {selectedReport.reportedUser.restrictedReason}</p>
+              <h4 className="font-semibold text-gray-900 dark:text-white">
+                Report Status
+              </h4>
+
+              <p>Type: {selectedReport?.type}</p>
+              <p>Updated At: {formatDate(selectedReport?.updatedAt)}</p>
+              <p>
+                Restricted Until:{" "}
+                {formatDateTime(selectedReport?.reportedUser?.restrictedUntil)}
+              </p>
+              <p>Reason: {selectedReport?.reportedUser?.restrictedReason}</p>
               <p></p>
             </div>
           </div>

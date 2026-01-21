@@ -44,7 +44,7 @@ const useGetAllEvents = (limit = 10, currentPage = 1) => {
 
   // Fetch single event details
   const getEventDetails = async (id) => {
-    setLoading(true);
+    
     try {
       const response = await axios.get(`${API_CONFIG.baseURL}/api/admin/events/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
